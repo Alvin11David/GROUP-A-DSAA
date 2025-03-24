@@ -1,3 +1,6 @@
+import math
+import random
+
 class SOM_TSP_Matrix:
     def __init__(self, adjacency_matrix, num_neurons=None, learning_rate=0.8, 
                  decay_rate=0.999, neighborhood_size=None, max_iter=1000):
@@ -65,3 +68,32 @@ class SOM_TSP_Matrix:
             coords = new_coords
         
         return coords
+    
+    def _initialize_neurons(self):
+        """Initialize neurons with City 1's neuron at fixed position."""
+        # Calculate centroid of other cities
+        if self.n_cities > 1:
+            sum_x = sum(c[0] for c in self.cities[1:])
+            sum_y = sum(c[1] for c in self.cities[1:])
+            centroid = (sum_x / (self.n_cities-1), sum_y / (self.n_cities-1))
+        else:
+            centroid = (0, 0)
+        
+        # Calculate radius from City 1 to farthest city
+        max_dist = max(math.sqrt(c[0]**2 + c[1]**2) for c in self.cities)
+        
+        # Place City 1's neuron at fixed position (top of circle)
+        fixed_angle = math.pi/2  # 90 degrees (top position)
+        neurons = [
+            (centroid[0] + max_dist * math.cos(fixed_angle),
+             centroid[1] + max_dist * math.sin(fixed_angle))
+        ]
+        
+        # Place remaining neurons in a circle
+        for i in range(1, self.num_neurons):
+            angle = 2 * math.pi * i / self.num_neurons + fixed_angle
+            x = centroid[0] + max_dist * math.cos(angle)
+            y = centroid[1] + max_dist * math.sin(angle)
+            neurons.append((x, y))
+            
+        return neurons
