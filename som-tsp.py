@@ -206,3 +206,23 @@ class SOM_TSP_Matrix:
             to_city = tour_order[i+1]
             distance = self.matrix[from_city][to_city]
             print(f"City {from_city+1} → City {to_city+1} (distance: {distance})")
+
+
+# adjacency matrix (City 1 is index 0)
+graph = [
+    [0, 12, 10, 0, 0, 0, 12],  # City 1 
+    [12, 0, 8, 12, 0, 0, 0],    # City 2 
+    [10, 8, 0, 11, 3, 0, 9],     # City 3 
+    [0, 12, 11, 0, 11, 10, 0],   # City 4 
+    [0, 0, 3, 11, 0, 6, 7],      # City 5 
+    [0, 0, 0, 10, 6, 0, 9],      # City 6 
+    [12, 0, 9, 0, 7, 9, 0]       # City 7 
+]
+
+# Create and train the SOM-TSP solver
+solver = SOM_TSP_Matrix(graph, num_neurons=20, learning_rate=0.5, max_iter=2000)
+solver.train()
+
+# Print results with City 1 as starting point
+print("TSP Solution Starting and Ending at City 1:")
+solver.print_results()
