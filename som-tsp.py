@@ -32,3 +32,36 @@ class SOM_TSP_Matrix:
         
         # Initialize neurons with City 1 at fixed position
         self.neurons = self._initialize_neurons()
+
+    def _matrix_to_coordinates(self):
+        """Convert adjacency matrix to 2D coordinates with City 1 at origin."""
+        # Start with random positions except City 1 at (0,0)
+        coords = [(0, 0)]  # City 1 at origin
+        coords.extend([(random.random(), random.random()) for _ in range(self.n_cities-1)])
+        
+        # Run spring model iterations
+        for _ in range(100):
+            new_coords = [(0, 0)]  # Keep City 1 fixed
+            for i in range(1, self.n_cities):  # Only update other cities
+                fx, fy = 0.0, 0.0
+                for j in range(self.n_cities):
+                    if i == j or self.matrix[i][j] == 0:
+                        continue
+                    
+                    dx = coords[j][0] - coords[i][0]
+                    dy = coords[j][1] - coords[i][1]
+                    dist = math.sqrt(dx*dx + dy*dy)
+                    
+                    desired_dist = 1.0 / (self.matrix[i][j] + 0.1)
+                    
+                    if dist > 0:
+                        force = (dist - desired_dist) / dist
+                        fx += force * dx
+                        fy += force * dy
+                
+                new_x = coords[i][0] + 0.1 * fx
+                new_y = coords[i][1] + 0.1 * fy
+                new_coords.append((new_x, new_y))
+            coords = new_coords
+        
+        return coords
