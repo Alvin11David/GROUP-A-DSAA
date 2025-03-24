@@ -193,3 +193,16 @@ class SOM_TSP_Matrix:
             to_city = tour_order[i+1]
             total += self.matrix[from_city][to_city]
         return total
+    
+    def print_results(self):
+        """Print the tour information with City 1 as starting point."""
+        tour_order = self.get_tour()
+        length = self.calculate_tour_length(tour_order)
+        print(f"Optimal tour length: {length}")
+        print("Tour order (city numbers):", " → ".join(f"City {x+1}" for x in tour_order))
+        print("\nDetailed path with distances:")
+        for i in range(len(tour_order)-1):
+            from_city = tour_order[i]
+            to_city = tour_order[i+1]
+            distance = self.matrix[from_city][to_city]
+            print(f"City {from_city+1} → City {to_city+1} (distance: {distance})")
