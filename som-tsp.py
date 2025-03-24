@@ -184,3 +184,12 @@ class SOM_TSP_Matrix:
         
         return tour_order
     
+
+    def calculate_tour_length(self, tour_order):
+        """Calculate the length of the tour using the original adjacency matrix."""
+        total = 0.0
+        for i in range(len(tour_order)-1):
+            from_city = tour_order[i]
+            to_city = tour_order[i+1]
+            total += self.matrix[from_city][to_city]
+        return total
