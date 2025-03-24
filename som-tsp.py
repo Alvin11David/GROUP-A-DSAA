@@ -131,3 +131,34 @@ class SOM_TSP_Matrix:
                 winner = i
         return winner
     
+    def train(self):
+        """Train the SOM to solve the TSP with City 1 fixed."""
+        for iteration in range(self.max_iter):
+            current_lr = self.learning_rate * (self.decay_rate ** iteration)
+            current_nb = max(1, int(self.neighborhood_size * (self.decay_rate ** iteration)))
+            
+            # Select random city (including City 1)
+            city_idx = random.randint(0, self.n_cities - 1)
+            city = self.cities[city_idx]
+            
+            winner = self._find_closest_neuron(city)
+            
+            for i in range(self.num_neurons):
+                distance_to_winner = min(abs(i - winner), 
+                                       self.num_neurons - abs(i - winner))
+                
+                if distance_to_winner <= current_nb:
+                    influence = math.exp(-(distance_to_winner**2) / (2 * (current_nb**2)))
+                    
+                    old_x, old_y = self.neurons[i]
+                    city_x, city_y = city
+                    
+                    new_x = old_x + current_lr * influence * (city_x - old_x)
+                    new_y = old_y + current_lr * influence * (city_y - old_y)
+                    
+                    # Keep City 1's neuron fixed during training
+                    if i == 0 and city_idx == 0:
+                        continue
+                        
+                    self.neurons[i] = (new_x, new_y)
+    
