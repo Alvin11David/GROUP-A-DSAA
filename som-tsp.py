@@ -162,3 +162,25 @@ class SOM_TSP_Matrix:
                         
                     self.neurons[i] = (new_x, new_y)
     
+
+    def get_tour(self):
+        """Get the TSP tour always starting and ending at City 1 (index 0)."""
+        # Assign each city to its closest neuron
+        assignments = []
+        for city_idx, city in enumerate(self.cities):
+            closest = self._find_closest_neuron(city)
+            assignments.append((closest, city_idx))
+        
+        # Sort cities by their assigned neuron index
+        assignments.sort(key=lambda x: x[0])
+        tour_order = [city_idx for (neuron_idx, city_idx) in assignments]
+        
+        # Ensure City 1 is first and last
+        if 0 in tour_order:
+            tour_order.remove(0)
+            tour_order = [0] + tour_order + [0]
+        else:
+            tour_order = [0] + tour_order + [0]
+        
+        return tour_order
+    
