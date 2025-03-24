@@ -97,3 +97,37 @@ class SOM_TSP_Matrix:
             neurons.append((x, y))
             
         return neurons
+    def _distance(self, a, b):
+        """Calculate Euclidean distance between two points."""
+        dx = a[0] - b[0]
+        dy = a[1] - b[1]
+        return math.sqrt(dx*dx + dy*dy)
+    
+    def _find_closest_neuron(self, city):
+        """Find the neuron closest to the given city."""
+        min_dist = float('inf')
+        winner = 0
+        for i, neuron in enumerate(self.neurons):
+            dist = self._distance(city, neuron)
+            if dist < min_dist:
+                min_dist = dist
+                winner = i
+        return winner
+    
+    def _distance(self, a, b):
+        """Calculate Euclidean distance between two points."""
+        dx = a[0] - b[0]
+        dy = a[1] - b[1]
+        return math.sqrt(dx*dx + dy*dy)
+    
+    def _find_closest_neuron(self, city):
+        """Find the neuron closest to the given city."""
+        min_dist = float('inf')
+        winner = 0
+        for i, neuron in enumerate(self.neurons):
+            dist = self._distance(city, neuron)
+            if dist < min_dist:
+                min_dist = dist
+                winner = i
+        return winner
+    
