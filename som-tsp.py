@@ -1,228 +1,111 @@
-import math
 import random
+import math
 
-class SOM_TSP_Matrix:
-    def __init__(self, adjacency_matrix, num_neurons=None, learning_rate=0.8, 
-                 decay_rate=0.999, neighborhood_size=None, max_iter=1000):
-        """
-        Initialize the SOM-TSP solver with City 1 (index 0) as fixed start/end point.
-        
-        Parameters:
-        - adjacency_matrix: The graph adjacency matrix (City 1 is first row/column)
-        - num_neurons: Number of neurons in the SOM
-        - learning_rate: Initial learning rate
-        - decay_rate: Decay rate for learning parameters
-        - neighborhood_size: Initial neighborhood size
-        - max_iter: Maximum iterations
-        """
-        self.matrix = adjacency_matrix
-        self.n_cities = len(adjacency_matrix)
-        
-        # Convert matrix to coordinate representation for SOM
-        self.cities = self._matrix_to_coordinates()
-        
-        # Set default parameters
-        if num_neurons is None:
-            num_neurons = 2 * self.n_cities
-        if neighborhood_size is None:
-            neighborhood_size = num_neurons // 2
-            
-        self.num_neurons = num_neurons
-        self.learning_rate = learning_rate
-        self.decay_rate = decay_rate
-        self.neighborhood_size = neighborhood_size
-        self.max_iter = max_iter
-        
-        # Initialize neurons with City 1 at fixed position
-        self.neurons = self._initialize_neurons()
-
-    def _matrix_to_coordinates(self):
-        """Convert adjacency matrix to 2D coordinates with City 1 at origin."""
-        # Start with random positions except City 1 at (0,0)
-        coords = [(0, 0)]  # City 1 at origin
-        coords.extend([(random.random(), random.random()) for _ in range(self.n_cities-1)])
-        
-        # Run spring model iterations
-        for _ in range(100):
-            new_coords = [(0, 0)]  # Keep City 1 fixed
-            for i in range(1, self.n_cities):  # Only update other cities
-                fx, fy = 0.0, 0.0
-                for j in range(self.n_cities):
-                    if i == j or self.matrix[i][j] == 0:
-                        continue
-                    
-                    dx = coords[j][0] - coords[i][0]
-                    dy = coords[j][1] - coords[i][1]
-                    dist = math.sqrt(dx*dx + dy*dy)
-                    
-                    desired_dist = 1.0 / (self.matrix[i][j] + 0.1)
-                    
-                    if dist > 0:
-                        force = (dist - desired_dist) / dist
-                        fx += force * dx
-                        fy += force * dy
-                
-                new_x = coords[i][0] + 0.1 * fx
-                new_y = coords[i][1] + 0.1 * fy
-                new_coords.append((new_x, new_y))
-            coords = new_coords
-        
-        return coords
-    
-    def _initialize_neurons(self):
-        """Initialize neurons with City 1's neuron at fixed position."""
-        # Calculate centroid of other cities
-        if self.n_cities > 1:
-            sum_x = sum(c[0] for c in self.cities[1:])
-            sum_y = sum(c[1] for c in self.cities[1:])
-            centroid = (sum_x / (self.n_cities-1), sum_y / (self.n_cities-1))
-        else:
-            centroid = (0, 0)
-        
-        # Calculate radius from City 1 to farthest city
-        max_dist = max(math.sqrt(c[0]**2 + c[1]**2) for c in self.cities)
-        
-        # Place City 1's neuron at fixed position (top of circle)
-        fixed_angle = math.pi/2  # 90 degrees (top position)
-        neurons = [
-            (centroid[0] + max_dist * math.cos(fixed_angle),
-             centroid[1] + max_dist * math.sin(fixed_angle))
-        ]
-        
-        # Place remaining neurons in a circle
-        for i in range(1, self.num_neurons):
-            angle = 2 * math.pi * i / self.num_neurons + fixed_angle
-            x = centroid[0] + max_dist * math.cos(angle)
-            y = centroid[1] + max_dist * math.sin(angle)
-            neurons.append((x, y))
-            
-        return neurons
-    def _distance(self, a, b):
-        """Calculate Euclidean distance between two points."""
-        dx = a[0] - b[0]
-        dy = a[1] - b[1]
-        return math.sqrt(dx*dx + dy*dy)
-    
-    def _find_closest_neuron(self, city):
-        """Find the neuron closest to the given city."""
-        min_dist = float('inf')
-        winner = 0
-        for i, neuron in enumerate(self.neurons):
-            dist = self._distance(city, neuron)
-            if dist < min_dist:
-                min_dist = dist
-                winner = i
-        return winner
-    
-    def _distance(self, a, b):
-        """Calculate Euclidean distance between two points."""
-        dx = a[0] - b[0]
-        dy = a[1] - b[1]
-        return math.sqrt(dx*dx + dy*dy)
-    
-    def _find_closest_neuron(self, city):
-        """Find the neuron closest to the given city."""
-        min_dist = float('inf')
-        winner = 0
-        for i, neuron in enumerate(self.neurons):
-            dist = self._distance(city, neuron)
-            if dist < min_dist:
-                min_dist = dist
-                winner = i
-        return winner
-    
-    def train(self):
-        """Train the SOM to solve the TSP with City 1 fixed."""
-        for iteration in range(self.max_iter):
-            current_lr = self.learning_rate * (self.decay_rate ** iteration)
-            current_nb = max(1, int(self.neighborhood_size * (self.decay_rate ** iteration)))
-            
-            # Select random city (including City 1)
-            city_idx = random.randint(0, self.n_cities - 1)
-            city = self.cities[city_idx]
-            
-            winner = self._find_closest_neuron(city)
-            
-            for i in range(self.num_neurons):
-                distance_to_winner = min(abs(i - winner), 
-                                       self.num_neurons - abs(i - winner))
-                
-                if distance_to_winner <= current_nb:
-                    influence = math.exp(-(distance_to_winner**2) / (2 * (current_nb**2)))
-                    
-                    old_x, old_y = self.neurons[i]
-                    city_x, city_y = city
-                    
-                    new_x = old_x + current_lr * influence * (city_x - old_x)
-                    new_y = old_y + current_lr * influence * (city_y - old_y)
-                    
-                    # Keep City 1's neuron fixed during training
-                    if i == 0 and city_idx == 0:
-                        continue
-                        
-                    self.neurons[i] = (new_x, new_y)
-    
-
-    def get_tour(self):
-        """Get the TSP tour always starting and ending at City 1 (index 0)."""
-        # Assign each city to its closest neuron
-        assignments = []
-        for city_idx, city in enumerate(self.cities):
-            closest = self._find_closest_neuron(city)
-            assignments.append((closest, city_idx))
-        
-        # Sort cities by their assigned neuron index
-        assignments.sort(key=lambda x: x[0])
-        tour_order = [city_idx for (neuron_idx, city_idx) in assignments]
-        
-        # Ensure City 1 is first and last
-        if 0 in tour_order:
-            tour_order.remove(0)
-            tour_order = [0] + tour_order + [0]
-        else:
-            tour_order = [0] + tour_order + [0]
-        
-        return tour_order
-    
-
-    def calculate_tour_length(self, tour_order):
-        """Calculate the length of the tour using the original adjacency matrix."""
-        total = 0.0
-        for i in range(len(tour_order)-1):
-            from_city = tour_order[i]
-            to_city = tour_order[i+1]
-            total += self.matrix[from_city][to_city]
-        return total
-    
-    def print_results(self):
-        """Print the tour information with City 1 as starting point."""
-        tour_order = self.get_tour()
-        length = self.calculate_tour_length(tour_order)
-        print(f"Optimal tour length: {length}")
-        print("Tour order (city numbers):", " → ".join(f"City {x+1}" for x in tour_order))
-        print("\nDetailed path with distances:")
-        for i in range(len(tour_order)-1):
-            from_city = tour_order[i]
-            to_city = tour_order[i+1]
-            distance = self.matrix[from_city][to_city]
-            print(f"City {from_city+1} → City {to_city+1} (distance: {distance})")
-
-
-# adjacency matrix (City 1 is index 0)
+# Given adjacency matrix (Graph)
 graph = [
-    [0, 12, 10, 0, 0, 0, 12],  # City 1 
-    [12, 0, 8, 12, 0, 0, 0],    # City 2 
-    [10, 8, 0, 11, 3, 0, 9],     # City 3 
-    [0, 12, 11, 0, 11, 10, 0],   # City 4 
-    [0, 0, 3, 11, 0, 6, 7],      # City 5 
-    [0, 0, 0, 10, 6, 0, 9],      # City 6 
-    [12, 0, 9, 0, 7, 9, 0]       # City 7 
+    [0, 12, 10, 0, 0, 0, 12],  # City 1
+    [12, 0, 8, 12, 0, 0, 0],   # City 2
+    [10, 8, 0, 11, 3, 0, 9],   # City 3
+    [0, 12, 11, 0, 11, 10, 0], # City 4
+    [0, 0, 3, 11, 0, 6, 7],    # City 5
+    [0, 0, 0, 10, 6, 0, 9],    # City 6
+    [12, 0, 9, 0, 7, 9, 0]     # City 7
 ]
 
-# Create and train the SOM-TSP solver
-solver = SOM_TSP_Matrix(graph, num_neurons=20, learning_rate=0.5, max_iter=2000)
-solver.train()
+# Number of cities
+n_cities = len(graph)
 
-# Print results with City 1 as starting point
-print("TSP Solution Starting and Ending at City 1:")
-solver.print_results()
+# Generate random (x, y) coordinates for cities
+random.seed(42)  # Fix seed for reproducibility
+cities = [(random.randint(0, 100), random.randint(0, 100)) for _ in range(n_cities)]
+
+# Initialize random neurons (nodes in the SOM)
+n_neurons = 20  # More neurons than cities for better learning
+neurons = [(random.randint(0, 100), random.randint(0, 100)) for _ in range(n_neurons)]
+
+# Hyperparameters
+learning_rate = 0.8
+sigma = 10
+iterations = 5000
+
+
+def euclidean_distance(a, b):
+    """Calculate Euclidean distance between two points."""
+    return math.sqrt((a[0] - b[0])**2 + (a[1] - b[1])**2)
+
+
+def find_winner(city):
+    """Find the neuron closest to the given city (Best Matching Unit - BMU)."""
+    min_dist = float("inf")
+    best_neuron = 0
+    for i, neuron in enumerate(neurons):
+        dist = euclidean_distance(city, neuron)
+        if dist < min_dist:
+            min_dist = dist
+            best_neuron = i
+    return best_neuron
+
+
+def update_weights(bmu_index, city, iteration):
+    """Adjust weights of neurons using a Gaussian neighborhood function."""
+    t = iteration / iterations  # Normalize time
+    lr = learning_rate * (1 - t)  # Decay learning rate
+    sigma_t = sigma * (1 - t)  # Decay sigma
+
+    for i in range(n_neurons):
+        distance_to_bmu = min(abs(i - bmu_index), n_neurons - abs(i - bmu_index))
+        influence = math.exp(-distance_to_bmu**2 / (2 * sigma_t**2))
+        neurons[i] = (
+            neurons[i][0] + lr * influence * (city[0] - neurons[i][0]),
+            neurons[i][1] + lr * influence * (city[1] - neurons[i][1])
+        )
+
+
+def train():
+    """Train the SOM network to approximate the TSP path."""
+    for iteration in range(iterations):
+        city = cities[random.randint(0, n_cities - 1)]  # Random city selection
+        bmu_index = find_winner(city)  # Find Best Matching Unit (BMU)
+        update_weights(bmu_index, city, iteration)  # Update neurons
+
+
+def get_tsp_path():
+    """Get the order of cities based on neuron proximity and ensure it starts and ends at City 1."""
+    city_to_neuron = [(i, find_winner(cities[i])) for i in range(n_cities)]
+    city_to_neuron.sort(key=lambda x: x[1])  # Sort by neuron index
+    path = [c[0] + 1 for c in city_to_neuron]  # Convert to 1-based index
+
+    # Ensure the path starts and ends at City 1
+    if path[0] != 1:
+        path.remove(1)
+        path.insert(0, 1)
+    path.append(1)  # Add City 1 at the end to complete the cycle
+
+    return path
+
+
+def calculate_total_distance(path):
+    """Calculate the total distance of the TSP path using the adjacency matrix."""
+    total_distance = 0
+    for i in range(len(path) - 1):  # Include the return trip to City 1
+        city1 = path[i] - 1  # Convert to 0-based index
+        city2 = path[i + 1] - 1  # Next city
+        distance = graph[city1][city2]
+
+        if distance == 0:  # If no direct connection exists, find nearest neighbor
+            neighbors = [graph[city1][j] for j in range(n_cities) if graph[city1][j] > 0]
+            if neighbors:
+                distance = min(neighbors)  # Use shortest possible adjacent path
+
+        total_distance += distance
+    return total_distance
+
+
+# Train the SOM and get the optimal TSP path
+train()
+tsp_path = get_tsp_path()
+total_distance = calculate_total_distance(tsp_path)
+
+# Print the results
+print("Optimal TSP Path (City Index Order):", tsp_path)
+print("Total Distance of the Path:", total_distance)
