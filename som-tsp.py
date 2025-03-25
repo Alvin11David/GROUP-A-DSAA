@@ -4,7 +4,7 @@ from collections import deque
 import random
 
 class StrictAdjacencySOM_TSP:
-    def __init__(self, adjacency_matrix, n_iterations=10000, learning_rate=0.8):
+    def __init__(self, adjacency_matrix, n_iterations=10, learning_rate=0.8):
         self.adj_matrix = np.array(adjacency_matrix)
         self.n_cities = len(adjacency_matrix)
         self.n_iterations = n_iterations
