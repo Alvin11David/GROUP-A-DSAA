@@ -51,11 +51,11 @@ NAVIGATE to the project directory:
 cd GROUP-A-DSAA
 
 CONTRIBUTORS
-1. Waluube Alvin David
-2. Ageno Elizabeth
-3. Akello Lilian
-4. Namuli Martina Daniella
-5. Okwir Francis
+1. Waluube Alvin David          24/U/11805/PS
+2. Ageno Elizabeth              24/U/25850/PS
+3. Akello Lilian                24/U/03142/PS
+4. Namuli Martina Daniella      23/U/14837/EVE
+5. Okwir Francis                24/U/10703/EVE
 
 LICENSE
 This project is under the MIT license.
